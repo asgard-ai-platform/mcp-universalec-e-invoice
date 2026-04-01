@@ -4,6 +4,7 @@ from typing import Annotated, Optional
 from pydantic import Field
 from app import mcp
 from connectors.einvoice_client import post_einvoice
+from config.settings import get_credentials
 
 
 @mcp.tool()
@@ -38,6 +39,8 @@ def create_b2c_invoice(
     currency: Annotated[Optional[str], Field(description="Currency code (e.g. 'USD').")] = None,
 ) -> dict:
     """Create a B2C invoice using positional field format (C0401). Returns the API response."""
+    from datetime import datetime
+    creds = get_credentials()
     payload: dict = {
         "A1": "C0401",
         "A2": invoice_number,
@@ -45,10 +48,16 @@ def create_b2c_invoice(
         "A4": invoice_time,
         "A5": buyer_id,
         "A6": buyer_name,
+        "A7": "", "A8": "", "A9": "", "A10": "", "A11": "", "A12": "", "A13": "",
+        "A15": "", "A16": "", "A17": "", "A18": "", "A19": "", "A20": "", "A21": "",
         "A22": invoice_type,
+        "A23": "",
         "A24": donate_mark,
+        "A25": "", "A26": "", "A27": "",
         "A28": print_mark,
+        "A29": "",
         "A30": random_number,
+        "A31": "",
         "B": items,
         "C1": sales_amount,
         "C2": free_tax,
@@ -57,6 +66,14 @@ def create_b2c_invoice(
         "C5": tax_rate,
         "C6": tax_amount,
         "C7": total,
+        "C8": "", "C9": "", "C10": "0.00", "C11": "", "C12": "", "C13": "",
+        "D1": creds["SELLERID"],
+        "D2": creds["POSSN"],
+        "D3": creds["POSID"],
+        "D4": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "EcrId": "",
+        "SellerName": "",
+        "QRCodeASKey": "",
     }
     if carrier_type is not None:
         payload["A25"] = carrier_type

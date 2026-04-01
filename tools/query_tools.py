@@ -13,9 +13,9 @@ def get_cancel_status(
 ) -> dict:
     """Get the cancellation status of an invoice (Z11). STATUSCODE: 1=completed, 2=pending, 3=failed. Returns the API response."""
     payload = {
-        "FUNCTIONCODE": "Z11",
         "INVOICE_NUMBER": invoice_number,
         "INVOICE_DATE": invoice_date,
+        "REMARK": "",
     }
     return post_einvoice("Z11", payload, wrapper="INDEX")
 

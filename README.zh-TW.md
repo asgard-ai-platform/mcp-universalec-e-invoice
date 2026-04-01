@@ -137,6 +137,163 @@ mcp-universalec-e-invoice/
 | `assign_branch_tracks` | E0401 | 分支機構配號 |
 | `report_unused_tracks` | E0402 | 空白未使用字軌回報 |
 
+## 使用範例
+
+以下範例皆經過汎宇電商測試環境實測驗證。
+
+### 範例 1：連線測試 (Y01)
+
+```python
+from tools.system_tools import get_system_time
+
+result = get_system_time()
+# 回應:
+# {
+#   "INDEX": {
+#     "FUNCTIONCODE": "Y01",
+#     "REPLY": "1",
+#     "MESSAGE": "連線成功",
+#     "SYSTIME": "2026/04/01 22:29:03"
+#   }
+# }
+```
+
+### 範例 2：取得發票號碼 (A01)
+
+```python
+from tools.invoice_number_tools import get_invoice_numbers
+
+result = get_invoice_numbers()
+# 回應:
+# {
+#   "INDEX": {
+#     "REPLY": "1",
+#     "TAXMONTH": "11504",          ← 發票期別（民國 115 年 03-04 月）
+#     "INVOICEHEADER": "GS",        ← 發票字軌
+#     "INVOICESTART": "82775400",   ← 起始號碼
+#     "INVOICEEND": "82775449",     ← 結束號碼（共 50 張）
+#     "QRCodeASKey": "D016F2FF..."  ← QR Code 加密金鑰
+#   }
+# }
+```
+
+### 範例 3：展開取號含 AESKEY (Z21)
+
+每張發票取得獨立的 AESKEY 與隨機碼，供 QR Code 產生使用。
+
+```python
+from tools.invoice_number_tools import get_invoice_numbers_expanded
+
+result = get_invoice_numbers_expanded()
+# INVOICEDATA 陣列包含每張發票的資訊:
+# [
+#   {"INVOICE_NUMBER": "GS82775450", "AESKEY": "Xymp9aqy...", "RANDOMNUMBER": "7833"},
+#   {"INVOICE_NUMBER": "GS82775451", "AESKEY": "XausdWBO...", "RANDOMNUMBER": "4581"},
+#   ...
+# ]
+```
+
+### 範例 4：開立 B2C 發票 (C0401)
+
+```python
+from tools.b2c_invoice_tools import create_b2c_invoice
+
+result = create_b2c_invoice(
+    invoice_number="GS82775401",
+    invoice_date="2026-04-01",
+    invoice_time="22:35:00",
+    buyer_id="0000000000",       # 消費者（無統編）
+    buyer_name="0000",           # 系統自動轉換為 4 碼隨機數
+    invoice_type="07",
+    donate_mark="0",             # 非捐贈
+    print_mark="Y",              # 已列印紙本
+    random_number="5678",
+    tax_type="1",                # 應稅
+    tax_rate="0.05",
+    tax_amount="5",
+    sales_amount="95",
+    free_tax="0",
+    zero_tax="0",
+    total="100",
+    items=[
+        {"B1": "1", "B2": "美式咖啡", "B3": "2", "B5": "50", "B6": "100", "B7": "1", "B13": "1"},
+    ],
+)
+# REPLY: "1", MESSAGE: "成功", ERROR_CODE: "0000"
+```
+
+### 範例 5：作廢發票 (C0501)
+
+```python
+from tools.b2c_invoice_tools import void_b2c_invoice
+
+result = void_b2c_invoice(
+    invoice_number="GS82775401",
+    invoice_date="2026-04-01",
+    buyer_id="0000000000",
+    seller_id="23997652",
+    cancel_date="2026-04-01",
+    cancel_time="22:36:00",
+    cancel_reason="測試作廢",
+)
+# REPLY: "1", MESSAGE: "成功"
+```
+
+### 範例 6：查詢註銷狀態 (Z11)
+
+```python
+from tools.query_tools import get_cancel_status
+
+result = get_cancel_status(
+    invoice_number="GS82775400",
+    invoice_date="2026-04-01",
+)
+# STATUSCODE: "1"=已完成, "2"=尚未完成, "3"=失敗
+```
+
+### 範例 7：完整流程 — 取號、開票、作廢
+
+```python
+from tools.invoice_number_tools import get_invoice_numbers_expanded
+from tools.b2c_invoice_tools import create_b2c_invoice, void_b2c_invoice
+
+# 第一步：取得可用發票號碼（含 AESKEY）
+numbers = get_invoice_numbers_expanded()
+inv = numbers["INDEX"]["INVOICEDATA"][0]
+
+# 第二步：使用配號開立發票
+result = create_b2c_invoice(
+    invoice_number=inv["INVOICE_NUMBER"],
+    invoice_date="2026-04-01",
+    invoice_time="14:30:00",
+    buyer_id="0000000000",
+    buyer_name="0000",
+    invoice_type="07",
+    donate_mark="0",
+    print_mark="Y",
+    random_number=inv["RANDOMNUMBER"],
+    tax_type="1", tax_rate="0.05", tax_amount="10",
+    sales_amount="190", free_tax="0", zero_tax="0", total="200",
+    items=[
+        {"B1": "1", "B2": "拿鐵咖啡", "B3": "2", "B5": "65", "B6": "130", "B7": "1", "B13": "1"},
+        {"B1": "2", "B2": "巧克力蛋糕", "B3": "1", "B5": "70", "B6": "70", "B7": "2", "B13": "1"},
+    ],
+)
+assert result["INDEX"]["REPLY"] == "1"
+
+# 第三步：如需作廢
+void_result = void_b2c_invoice(
+    invoice_number=inv["INVOICE_NUMBER"],
+    invoice_date="2026-04-01",
+    buyer_id="0000000000",
+    seller_id="23997652",
+    cancel_date="2026-04-01",
+    cancel_time="15:00:00",
+    cancel_reason="客戶取消訂單",
+)
+assert void_result["INDEX"]["REPLY"] == "1"
+```
+
 ## 測試
 
 ```bash

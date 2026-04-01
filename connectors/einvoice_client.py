@@ -32,13 +32,17 @@ def post_einvoice(
     creds = get_credentials()
 
     if wrapper == "INDEX":
-        body = {
-            "INDEX": {
-                "FUNCTIONCODE": function_code,
-                "SELLERID": creds["SELLERID"],
-                "POSID": creds["POSID"],
-                "POSSN": creds["POSSN"],
-                "SYSTIME": _get_systime(),
+        # Minimal required fields — individual tools add their specific fields via payload
+        index_data = {
+            "FUNCTIONCODE": function_code,
+            "SELLERID": creds["SELLERID"],
+            "POSID": creds["POSID"],
+            "POSSN": creds["POSSN"],
+            "SYSTIME": _get_systime(),
+        }
+        # A01/C01/Y01/Z21/Z22 need these extra defaults; Z11 does not
+        if function_code in ("A01", "C01", "Y01", "Z21", "Z22"):
+            index_data.update({
                 "ACCOUNT": "0000000000000000",
                 "APPID": "0000000000000000",
                 "ServerType": "invioce_ml",
@@ -47,9 +51,9 @@ def post_einvoice(
                 "VERIONUPDATE": "",
                 "EcrId": "",
                 "APPVSERION": "",
-                **payload,
-            }
-        }
+            })
+        index_data.update(payload)
+        body = {"INDEX": index_data}
     elif wrapper == "Invoice":
         inner = {
             "POSSN": creds["POSSN"],
