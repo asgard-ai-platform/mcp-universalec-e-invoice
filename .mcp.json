@@ -1,12 +1,15 @@
 {
   "mcpServers": {
-    "{service}": {
+    "mcp-universalec-e-invoice": {
       "command": "python",
       "args": ["mcp_server.py"],
       "cwd": "${PWD}",
       "env": {
         "PYTHONPATH": "${PWD}",
-        "SERVICE_API_TOKEN": "${SERVICE_API_TOKEN}"
+        "EINVOICE_BASE_URL": "${EINVOICE_BASE_URL}",
+        "EINVOICE_SELLER_ID": "${EINVOICE_SELLER_ID}",
+        "EINVOICE_POS_ID": "${EINVOICE_POS_ID}",
+        "EINVOICE_POS_SN": "${EINVOICE_POS_SN}"
       }
     }
   }

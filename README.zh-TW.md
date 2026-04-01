@@ -1,115 +1,161 @@
-# MCP Server 範本
+# MCP 汎宇電商電子發票伺服器
 
-建構 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 伺服器的可重用範本，將 AI 可呼叫的工具暴露給 AI 客戶端。[Asgard AI Platform](https://github.com/asgard-ai-platform) 開源生態系的一部分。
+[MCP (Model Context Protocol)](https://modelcontextprotocol.io/) 伺服器，封裝 **汎宇電商 (Universal EC) 台灣電子發票 POS 機 Web Service** (JSON 格式, MIG4.1)。透過 stdio JSON-RPC 2.0 提供 27 個 AI 可呼叫的工具，涵蓋所有可用的功能代碼。
 
 [English](README.md)
 
 ## 功能特色
 
+- **27 個 MCP 工具** — 完整涵蓋汎宇電商電子發票 API 所有功能代碼
 - **stdio JSON-RPC 2.0** — 標準 MCP 傳輸協定
-- **`@mcp.tool()` 裝飾器** — Pydantic 型別化工具註冊
-- **可插拔連接器** — REST、RSS、Scraper、MQTT、GraphQL
-- **可插拔認證** — Bearer Token、API Key、OAuth 2.0、無認證
-- **E2E 測試** — 即時 API 測試執行器
-- **Claude Code 整合** — `.mcp.json` 自動發現 + `CLAUDE.md`
-
-## 如何使用此範本
-
-1. 在 GitHub 上點擊 **「Use this template」**（或 Fork 此 Repo）
-2. 重新命名為 `mcp-{你的服務}` （例如 `mcp-ecpay`）
-3. **選擇連接器** — 保留 `connectors/` 中需要的，刪除其餘
-4. **選擇認證** — 保留 `auth/` 中需要的，刪除其餘
-5. **設定** — 更新 `config/settings.py` 的 API 端點
-6. **建構工具** — 用你的實際工具替換 `tools/sample_tools.py`
-7. **更新元資料** — `pyproject.toml`、`.mcp.json`、`.env.example`、README
+- **3 種封裝格式** — INDEX、Invoice、Allowance（依功能自動選擇）
+- **憑證自動注入** — SELLERID/POSID/POSSN 由 connector 自動注入
+- **TDD 測試** — 53 個單元測試 + 5 個即時回歸測試
 
 ## 快速開始
 
 ```bash
-# 環境設定
+# 安裝
 uv venv && source .venv/bin/activate
-uv pip install -e .
+uv pip install -e ".[dev]"
 
-# 設定認證
+# 設定憑證
 cp .env.example .env
-# 編輯 .env 填入你的 API 認證資訊
-
-# 測試連線
-python scripts/auth/test_connection.py
+# 編輯 .env 填入你的汎宇電商憑證
 
 # 啟動伺服器
 python mcp_server.py
 ```
 
+## 設定
+
+建立 `.env` 檔案，填入汎宇電商 POS 機憑證：
+
+```
+EINVOICE_BASE_URL=https://epostw.einvoice.com.tw/GetInvoice.ashx
+EINVOICE_SELLER_ID=your_seller_id
+EINVOICE_POS_ID=your_pos_id
+EINVOICE_POS_SN=your_pos_sn
+```
+
+| 環境 | URL |
+|---|---|
+| 測試機 | `https://epostw.einvoice.com.tw/GetInvoice.ashx` |
+| 正式機 | `https://eposw.einvoice.com.tw/GetInvoice.ashx` |
+
 ## 專案結構
 
 ```
-mcp-{service}/
-├── app.py                  # MCPServer 單例
-├── mcp_server.py           # 入口（stdio 傳輸）
-├── config/settings.py      # API 端點、URL 建構、認證委派
-├── connectors/             # 資料來源連接器（選一個）
-│   ├── rest_client.py      #   HTTP REST（含重試＋分頁）
-│   ├── rss_client.py       #   RSS/Atom 訂閱解析
-│   ├── scraper_client.py   #   網頁爬取（BeautifulSoup）
-│   ├── mqtt_client.py      #   MQTT（IoT / 工業）
-│   └── graphql_client.py   #   GraphQL（Relay 分頁）
-├── auth/                   # 認證模組（選一個）
-│   ├── bearer.py           #   Bearer Token
-│   ├── api_key.py          #   API Key（Header 或 Query Param）
-│   ├── oauth2.py           #   OAuth 2.0 客戶端憑證
-│   └── none.py             #   無認證（公開 API）
-├── tools/                  # 你的 MCP 工具
-│   └── sample_tools.py     #   範例工具（請替換）
-├── tests/test_all_tools.py # E2E 測試執行器
-└── scripts/auth/test_connection.py
+mcp-universalec-e-invoice/
+├── app.py                          # FastMCP 單例
+├── mcp_server.py                   # 進入點 (stdio 傳輸)
+├── config/
+│   └── settings.py                 # URL + 憑證 (從 .env 讀取)
+├── connectors/
+│   └── einvoice_client.py          # 單一 POST 連接器 (3 種封裝格式)
+├── tools/
+│   ├── system_tools.py             # Y01
+│   ├── invoice_number_tools.py     # A01, C01, Z21, Z22
+│   ├── b2c_invoice_tools.py        # C0401, C0401N, C0501
+│   ├── b2b_invoice_tools.py        # A0401, A0501, A0101, A0201
+│   ├── allowance_tools.py          # D0401, D0401N, D0501, B0401, B0501, B0101
+│   ├── cancel_tools.py             # C0701, B0701
+│   ├── query_tools.py              # Z11, Z31, Z33, Z34
+│   └── admin_tools.py              # Z32, E0401, E0402
+└── tests/
+    ├── conftest.py                 # 共用 fixtures
+    ├── test_einvoice_client.py     # 連接器單元測試
+    ├── test_system_tools.py        # Y01 測試
+    ├── test_invoice_number_tools.py
+    ├── test_b2c_invoice_tools.py
+    ├── test_b2b_invoice_tools.py
+    ├── test_allowance_tools.py
+    ├── test_cancel_tools.py
+    ├── test_query_tools.py
+    ├── test_admin_tools.py
+    └── test_regression.py          # 即時 API 測試
 ```
 
-## 連接器
+## 工具列表 (27 個)
 
-| 連接器 | 用途 | 額外依賴 |
-|--------|------|----------|
-| `rest_client.py` | REST API（大多數服務） | 無（使用 `requests`） |
-| `rss_client.py` | RSS/Atom 訂閱（新聞、部落格） | `feedparser` |
-| `scraper_client.py` | 網頁爬取（論壇、公開頁面） | `beautifulsoup4` |
-| `mqtt_client.py` | IoT / 工業（MQTT Broker） | `paho-mqtt` |
-| `graphql_client.py` | GraphQL API（Meta 等） | 無（使用 `requests`） |
+### 系統
+| 工具 | 代碼 | 說明 |
+|---|---|---|
+| `get_system_time` | Y01 | 連線測試 / 取得伺服器時間 |
 
-## 認證模組
+### 發票號碼管理
+| 工具 | 代碼 | 說明 |
+|---|---|---|
+| `get_invoice_numbers` | A01 | 取得發票號碼配號（本期） |
+| `get_next_period_numbers` | C01 | 取得發票號碼配號（下期） |
+| `get_invoice_numbers_expanded` | Z21 | 展開取號含 AESKEY（本期） |
+| `get_next_period_numbers_expanded` | Z22 | 展開取號含 AESKEY（下期） |
 
-| 模組 | 模式 | 環境變數 |
-|------|------|----------|
-| `bearer.py` | `Authorization: Bearer <token>` | `SERVICE_API_TOKEN` |
-| `api_key.py` | Header 或 Query Param | `SERVICE_API_KEY` |
-| `oauth2.py` | 客戶端憑證 + 自動刷新 | `SERVICE_CLIENT_ID`、`SERVICE_CLIENT_SECRET` |
-| `none.py` | 無認證 | （無） |
+### B2C 發票
+| 工具 | 代碼 | 說明 |
+|---|---|---|
+| `create_b2c_invoice` | C0401 | 開立 B2C 發票（位置欄位格式） |
+| `create_b2c_invoice_named` | C0401N | 開立 B2C 發票（命名欄位格式） |
+| `void_b2c_invoice` | C0501 | 作廢 B2C 發票 |
 
-## 新增工具
+### B2B 發票
+| 工具 | 代碼 | 說明 |
+|---|---|---|
+| `create_b2b_invoice` | A0401 | 開立 B2B 發票（平台存證） |
+| `void_b2b_invoice` | A0501 | 作廢 B2B 發票 |
+| `create_b2b_exchange_invoice` | A0101 | 開立 B2B 交換發票 |
+| `void_b2b_exchange_invoice` | A0201 | 作廢 B2B 交換發票 |
 
-```python
-from app import mcp
-from pydantic import Field
-from connectors.rest_client import api_get
+### 折讓
+| 工具 | 代碼 | 說明 |
+|---|---|---|
+| `create_b2c_allowance` | D0401 | 開立 B2C 折讓證明單 |
+| `create_b2c_allowance_named` | D0401N | 開立 B2C 折讓（命名格式） |
+| `void_b2c_allowance` | D0501 | 作廢 B2C 折讓證明單 |
+| `create_b2b_allowance` | B0401 | 開立 B2B 折讓證明單 |
+| `void_b2b_allowance` | B0501 | 作廢 B2B 折讓證明單 |
+| `create_b2b_exchange_allowance` | B0101 | 開立 B2B 交換折讓證明單 |
 
-@mcp.tool()
-def get_order(
-    order_id: str = Field(description="要查詢的訂單 ID"),
-) -> dict:
-    """取得特定訂單的詳細資訊。"""
-    return api_get("order_detail", path_params={"order_id": order_id})
-```
+### 註銷
+| 工具 | 代碼 | 說明 |
+|---|---|---|
+| `cancel_invoice` | C0701 | 註銷發票 |
+| `batch_cancel_invoice` | B0701 | 批次註銷（含完整發票資料） |
+
+### 查詢
+| 工具 | 代碼 | 說明 |
+|---|---|---|
+| `get_cancel_status` | Z11 | 查詢發票註銷流程狀態 |
+| `get_downloaded_track_ranges` | Z31 | 查詢已下載字軌區間 |
+| `get_assignment_info` | Z33 | 查詢統編配號（自動/手動） |
+| `get_winning_list` | Z34 | 下載中獎清冊 |
+
+### 管理
+| 工具 | 代碼 | 說明 |
+|---|---|---|
+| `upload_next_period_tracks` | Z32 | 上傳下期字軌配號 |
+| `assign_branch_tracks` | E0401 | 分支機構配號 |
+| `report_unused_tracks` | E0402 | 空白未使用字軌回報 |
 
 ## 測試
 
 ```bash
-python scripts/auth/test_connection.py   # 驗證認證資訊
-python tests/test_all_tools.py           # 執行所有工具 E2E 測試
+# 單元測試（模擬 HTTP，不需要憑證）
+pytest tests/ --ignore=tests/test_regression.py -v
+
+# 回歸測試（需要 .env 中的有效憑證）
+pytest tests/test_regression.py -v -s
 ```
+
+## 架構
+
+所有 27 個功能透過單一 POST 端點 (`GetInvoice.ashx`) 通訊，以 JSON body 中的功能代碼區分。連接器自動注入憑證 (SELLERID, POSID, POSSN) 與系統時間。
+
+三種 JSON 封裝格式：
+- **INDEX** — 系統/號碼功能 (Y01, A01, C01, Z21, Z22, Z11)
+- **Invoice** — 發票/折讓/管理 CRUD (C0401, A0401, D0401, C0701, E0401, Z31 等)
+- **Allowance** — 僅 B0501（作廢 B2B 折讓）
 
 ## 授權
 
 MIT License — 詳見 [LICENSE](LICENSE)。
-
-## Asgard 生態系
-
-此範本驅動 63+ 個 MCP 伺服器，連接 AI 至電商、金融、政府開放資料、IoT、社群媒體等真實世界服務。查看完整 [Asgard AI Platform](https://github.com/asgard-ai-platform)。

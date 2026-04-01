@@ -1,14 +1,14 @@
 # Contributing
 
-Thank you for contributing to this MCP Server!
+Thank you for contributing to the Universal EC E-Invoice MCP Server!
 
 ## Setup
 
 ```bash
-git clone https://github.com/asgard-ai-platform/mcp-{service}.git
-cd mcp-{service}
+git clone git@github.com:asgard-ai-platform/mcp-universalec-e-invoice.git
+cd mcp-universalec-e-invoice
 uv venv && source .venv/bin/activate
-uv pip install -e .
+uv pip install -e ".[dev]"
 cp .env.example .env
 # Edit .env with your credentials
 ```
@@ -16,44 +16,45 @@ cp .env.example .env
 ## Adding a New Tool
 
 1. **Choose module**: Pick an existing file in `tools/` or create a new `tools/{domain}_tools.py`
-2. **Import helpers**: `from connectors.rest_client import api_get, fetch_all_pages`
+2. **Import connector**: `from connectors.einvoice_client import post_einvoice`
 3. **Write the tool**:
    ```python
    from app import mcp
-   from pydantic import Field
+   from connectors.einvoice_client import post_einvoice
 
    @mcp.tool()
    def my_new_tool(
        param: str = Field(description="What this param does"),
    ) -> dict:
        """What this tool does — shown in MCP tools/list."""
-       data = api_get("endpoint_key", path_params={"id": param})
-       return {"result": data}
+       return post_einvoice("FUNCTION_CODE", {"key": param}, wrapper="Invoice")
    ```
 4. **Register**: If you created a new module, add `import tools.{module}  # noqa: F401` in `mcp_server.py`
-5. **Test**: Add a test case in `tests/test_all_tools.py`
-6. **Verify**: Run `python tests/test_all_tools.py`
+5. **Test**: Add a test in `tests/test_{module}.py`
 
 ## Code Conventions
 
 - English for code, docstrings, and tool descriptions
-- Use connector helpers from `connectors/` — never call `requests` directly in tool functions
+- Use `connectors/einvoice_client.py` — never call `requests` directly in tools
 - All tools return `dict`
-- Use Pydantic `Field()` for parameter descriptions
-- Only add dependencies that your connector type requires
+- Three JSON wrapper formats: `INDEX`, `Invoice`, `Allowance`
+- Credentials from `.env`, injected by connector — never by tool code
+- Use `Annotated[Optional[str], Field(...)] = None` for optional parameters
 
 ## Testing
 
-All tests run against the live API:
 ```bash
-python scripts/auth/test_connection.py   # Validate credentials
-python tests/test_all_tools.py           # Run all tool tests
+# Unit tests (mocked, no credentials needed)
+pytest tests/ --ignore=tests/test_regression.py -v
+
+# Regression tests (requires .env with valid credentials)
+pytest tests/test_regression.py -v -s
 ```
 
 ## Pull Requests
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/add-new-tool`
-3. Make your changes
-4. Run tests
+3. Write tests first (TDD)
+4. Run full test suite
 5. Submit a PR with a clear description
