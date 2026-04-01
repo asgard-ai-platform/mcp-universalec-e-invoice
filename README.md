@@ -141,215 +141,145 @@ mcp-universalec-e-invoice/
 
 ## Usage Examples
 
-Below are real examples tested against the Universal EC test environment.
+Once the MCP server is running, an AI assistant (e.g. Claude) can call these tools on your behalf. Here are real-world scenarios showing what you say and how the AI responds.
 
-### Example 1: Connection Test (Y01)
+---
 
-```python
-from tools.system_tools import get_system_time
+### "Help me check if the e-invoice system is connected"
 
-result = get_system_time()
-# Response:
-# {
-#   "INDEX": {
-#     "FUNCTIONCODE": "Y01",
-#     "REPLY": "1",
-#     "MESSAGE": "連線成功",
-#     "SYSTIME": "2026/04/01 22:29:03",
-#     ...
-#   }
-# }
+> **You:** 幫我測試一下電子發票系統有沒有連線成功
+
+**AI calls:** `get_system_time()`
+
+**Result:** The system returns `REPLY: "1"` with `MESSAGE: "連線成功"` and the server time `2026/04/01 22:29:03`. Your connection is working.
+
+---
+
+### "What invoice numbers do I have available right now?"
+
+> **You:** 我目前有哪些可用的發票號碼？
+
+**AI calls:** `get_invoice_numbers()`
+
+**Result:** Current period is 115 年 03-04 月, track `GS`, numbers `82775400` ~ `82775449` (50 invoices available). The AI can also explain the QRCode AES key returned for barcode generation.
+
+---
+
+### "I need to get the detailed invoice numbers with AES keys for printing"
+
+> **You:** 我需要取得每張發票的 AESKEY 跟隨機碼，準備列印用
+
+**AI calls:** `get_invoice_numbers_expanded()`
+
+**Result:** Returns 50 individual invoices, each with its own number, AESKEY, and random number:
+```
+GS82775450 → AESKEY: Xymp9aqy..., RandomNumber: 7833
+GS82775451 → AESKEY: XausdWBO..., RandomNumber: 4581
+...
 ```
 
-### Example 2: Get Invoice Numbers (A01)
+---
 
-```python
-from tools.invoice_number_tools import get_invoice_numbers
+### "Issue an invoice for a customer who bought 2 lattes and 1 cake"
 
-result = get_invoice_numbers()
-# Response:
-# {
-#   "INDEX": {
-#     "FUNCTIONCODE": "A01",
-#     "REPLY": "1",
-#     "MESSAGE": "成功",
-#     "TAXMONTH": "11504",          ← invoice period (民國 115 年 03-04 月)
-#     "INVOICEHEADER": "GS",        ← 2-letter track
-#     "INVOICESTART": "82775400",   ← start number
-#     "INVOICEEND": "82775449",     ← end number (50 invoices)
-#     "QRCodeASKey": "D016F2FF...", ← AES key for QR code
-#     "TYPE": "07"                  ← invoice type
-#   }
-# }
+> **You:** 幫我開一張發票，客人買了 2 杯拿鐵 65 元、1 個巧克力蛋糕 85 元，總共 215 元含稅，紙本發票已列印
+
+**AI calls:** `get_invoice_numbers_expanded()` to get an available number, then:
+
 ```
-
-### Example 3: Get Expanded Numbers with AESKEY (Z21)
-
-Each invoice gets its own AESKEY and random number for QR code generation.
-
-```python
-from tools.invoice_number_tools import get_invoice_numbers_expanded
-
-result = get_invoice_numbers_expanded()
-# Response includes INVOICEDATA array with per-invoice details:
-# {
-#   "INDEX": {
-#     "FUNCTIONCODE": "Z21",
-#     "REPLY": "1",
-#     "INVOICEDATA": [
-#       {
-#         "INVOICE_NUMBER": "GS82775450",
-#         "AESKEY": "Xymp9aqynK4N2jSIYLj1Lg==",
-#         "RANDOMNUMBER": "7833",
-#         "TAXMONTH": "11504"
-#       },
-#       {
-#         "INVOICE_NUMBER": "GS82775451",
-#         "AESKEY": "XausdWBOIH+SYm6DOSgInQ==",
-#         "RANDOMNUMBER": "4581",
-#         "TAXMONTH": "11504"
-#       },
-#       ...  ← up to 50 invoices per allocation
-#     ]
-#   }
-# }
-```
-
-### Example 4: Create B2C Invoice (C0401)
-
-```python
-from tools.b2c_invoice_tools import create_b2c_invoice
-
-result = create_b2c_invoice(
-    invoice_number="GS82775401",
-    invoice_date="2026-04-01",
-    invoice_time="22:35:00",
-    buyer_id="0000000000",       # consumer (no tax ID)
-    buyer_name="0000",           # auto-converts to 4 random digits
-    invoice_type="07",
-    donate_mark="0",             # not a donation
-    print_mark="Y",              # paper invoice printed
-    random_number="5678",
-    tax_type="1",                # taxable
-    tax_rate="0.05",
-    tax_amount="5",
-    sales_amount="95",
-    free_tax="0",
-    zero_tax="0",
-    total="100",
-    items=[
-        {"B1": "1", "B2": "美式咖啡", "B3": "2", "B5": "50", "B6": "100", "B7": "1", "B13": "1"},
-    ],
+create_b2c_invoice(
+  invoice_number = "GS82775402",     ← from the allocation
+  invoice_date   = "2026-04-01",
+  invoice_time   = "14:30:00",
+  buyer_id       = "0000000000",     ← consumer, no tax ID
+  buyer_name     = "0000",
+  invoice_type   = "07",
+  donate_mark    = "0",
+  print_mark     = "Y",
+  random_number  = "6136",           ← from the allocation
+  tax_type = "1", tax_rate = "0.05", tax_amount = "10",
+  sales_amount = "205", free_tax = "0", zero_tax = "0", total = "215",
+  items = [
+    {B1:"1", B2:"拿鐵咖啡", B3:"2", B5:"65", B6:"130", B7:"1", B13:"1"},
+    {B1:"2", B2:"巧克力蛋糕", B3:"1", B5:"85", B6:"85", B7:"2", B13:"1"},
+  ]
 )
-# Response:
-# {
-#   "INDEX": {
-#     "FUNCTIONCODE": "C0401",
-#     "REPLY": "1",
-#     "MESSAGE": "成功",
-#     "INVOICENUMBER": "GS82775401",
-#     "ERROR_CODE": "0000"
-#   }
-# }
 ```
 
-### Example 5: Void an Invoice (C0501)
+**Result:** `REPLY: "1"`, `MESSAGE: "成功"`, invoice `GS82775402` created.
 
-```python
-from tools.b2c_invoice_tools import void_b2c_invoice
+---
 
-result = void_b2c_invoice(
-    invoice_number="GS82775401",
-    invoice_date="2026-04-01",
-    buyer_id="0000000000",
-    seller_id="23997652",
-    cancel_date="2026-04-01",
-    cancel_time="22:36:00",
-    cancel_reason="測試作廢",
+### "Please void invoice GS82775401"
+
+> **You:** 請幫我作廢發票 GS82775401，原因是客戶取消訂單
+
+**AI calls:**
+```
+void_b2c_invoice(
+  invoice_number = "GS82775401",
+  invoice_date   = "2026-04-01",
+  buyer_id       = "0000000000",
+  seller_id      = "23997652",
+  cancel_date    = "2026-04-01",
+  cancel_time    = "15:00:00",
+  cancel_reason  = "客戶取消訂單",
 )
-# Response:
-# {
-#   "INDEX": {
-#     "FUNCTIONCODE": "C0501",
-#     "REPLY": "1",
-#     "MESSAGE": "成功",
-#     "INVOICENUMBER": "GS82775401",
-#     "ERROR_CODE": "0000"
-#   }
-# }
 ```
 
-### Example 6: Query Cancel Status (Z11)
+**Result:** `REPLY: "1"`, `MESSAGE: "成功"` — invoice voided successfully.
 
-```python
-from tools.query_tools import get_cancel_status
+---
 
-result = get_cancel_status(
-    invoice_number="GS82775400",
-    invoice_date="2026-04-01",
+### "Check the cancellation status of invoice GS82775400"
+
+> **You:** 幫我查一下 GS82775400 這張發票的註銷狀態
+
+**AI calls:** `get_cancel_status(invoice_number="GS82775400", invoice_date="2026-04-01")`
+
+**Result:** `STATUSCODE: "1"` = completed, `"2"` = pending, `"3"` = failed. The AI interprets and tells you the current status in plain language.
+
+---
+
+### "Cancel invoice GS82775400 — it was issued by mistake"
+
+> **You:** 發票 GS82775400 開錯了，幫我註銷
+
+**AI calls:**
+```
+cancel_invoice(
+  invoice_number = "GS82775400",
+  invoice_date   = "2026-04-01",
+  buyer_id       = "0000000000",
+  seller_id      = "23997652",
+  cancel_date    = "2026-04-01",
+  cancel_time    = "16:00:00",
+  cancel_reason  = "誤開發票",
 )
-# Response:
-# {
-#   "INDEX": {
-#     "FUNCTIONCODE": "Z11",
-#     "REPLY": "1",
-#     "STATUSCODE": "1",  ← 1=completed, 2=pending, 3=failed
-#     "INVOICENUMBER": "GS82775400",
-#     "ERROR_CODE": "0000"
-#   }
-# }
 ```
 
-### Example 7: Full Workflow — Issue, Query, Void
+**Result:** If the invoice has been uploaded to the tax authority, `REPLY: "1"` confirms cancellation. If it hasn't been uploaded yet, the system returns `REPLY: "-1"` with a message explaining the invoice is still being processed — the AI will tell you to try again later.
 
-A typical workflow: allocate numbers, create invoice, check status, void if needed.
+> **Note:** "作廢" (C0501 void) and "註銷" (C0701 cancel) are different. Void happens before upload to tax authority; cancel happens after. The AI picks the right tool based on context.
 
-```python
-from tools.invoice_number_tools import get_invoice_numbers_expanded
-from tools.b2c_invoice_tools import create_b2c_invoice, void_b2c_invoice
+---
 
-# Step 1: Get an available invoice number with AESKEY
-numbers = get_invoice_numbers_expanded()
-inv = numbers["INDEX"]["INVOICEDATA"][0]
-# inv = {"INVOICE_NUMBER": "GS82775450", "AESKEY": "...", "RANDOMNUMBER": "7833"}
+### "I need to check what invoice number ranges have been downloaded"
 
-# Step 2: Create invoice using the allocated number
-result = create_b2c_invoice(
-    invoice_number=inv["INVOICE_NUMBER"],
-    invoice_date="2026-04-01",
-    invoice_time="14:30:00",
-    buyer_id="0000000000",
-    buyer_name="0000",
-    invoice_type="07",
-    donate_mark="0",
-    print_mark="Y",
-    random_number=inv["RANDOMNUMBER"],
-    tax_type="1",
-    tax_rate="0.05",
-    tax_amount="10",
-    sales_amount="190",
-    free_tax="0",
-    zero_tax="0",
-    total="200",
-    items=[
-        {"B1": "1", "B2": "拿鐵咖啡", "B3": "2", "B5": "65", "B6": "130", "B7": "1", "B13": "1"},
-        {"B1": "2", "B2": "巧克力蛋糕", "B3": "1", "B5": "70", "B6": "70", "B7": "2", "B13": "1"},
-    ],
-)
-assert result["INDEX"]["REPLY"] == "1"
+> **You:** 查一下統編 23997652 在 11504 期的 GS 字軌已下載的配號區間
 
-# Step 3: Void if needed
-void_result = void_b2c_invoice(
-    invoice_number=inv["INVOICE_NUMBER"],
-    invoice_date="2026-04-01",
-    buyer_id="0000000000",
-    seller_id="23997652",
-    cancel_date="2026-04-01",
-    cancel_time="15:00:00",
-    cancel_reason="客戶取消訂單",
-)
-assert void_result["INDEX"]["REPLY"] == "1"
+**AI calls:**
 ```
+get_downloaded_track_ranges(
+  head_ban      = "23997652",
+  branch_ban    = "23997652",
+  invoice_type  = "07",
+  year_month    = "11504",
+  invoice_track = "GS",
+)
+```
+
+**Result:** Returns the track ranges that have been successfully downloaded for this period.
 
 ## Testing
 

@@ -139,160 +139,129 @@ mcp-universalec-e-invoice/
 
 ## 使用範例
 
-以下範例皆經過汎宇電商測試環境實測驗證。
+MCP 伺服器啟動後，AI 助手（如 Claude）可以代你呼叫這些工具。以下是實際使用情境，展示你怎麼說、AI 怎麼做。
 
-### 範例 1：連線測試 (Y01)
+---
 
-```python
-from tools.system_tools import get_system_time
+### 「幫我測試電子發票系統有沒有連線成功」
 
-result = get_system_time()
-# 回應:
-# {
-#   "INDEX": {
-#     "FUNCTIONCODE": "Y01",
-#     "REPLY": "1",
-#     "MESSAGE": "連線成功",
-#     "SYSTIME": "2026/04/01 22:29:03"
-#   }
-# }
+**AI 呼叫:** `get_system_time()`
+
+**結果:** 系統回傳 `REPLY: "1"`、`MESSAGE: "連線成功"`，伺服器時間 `2026/04/01 22:29:03`。連線正常。
+
+---
+
+### 「我目前有哪些可用的發票號碼？」
+
+**AI 呼叫:** `get_invoice_numbers()`
+
+**結果:** 本期 115 年 03-04 月，字軌 `GS`，號碼 `82775400` ~ `82775449`（共 50 張可用）。AI 同時會說明回傳的 QRCode AES 金鑰用途。
+
+---
+
+### 「我需要取得每張發票的 AESKEY 跟隨機碼，準備列印用」
+
+**AI 呼叫:** `get_invoice_numbers_expanded()`
+
+**結果:** 回傳 50 張發票的個別資訊：
+```
+GS82775450 → AESKEY: Xymp9aqy..., 隨機碼: 7833
+GS82775451 → AESKEY: XausdWBO..., 隨機碼: 4581
+...
 ```
 
-### 範例 2：取得發票號碼 (A01)
+---
 
-```python
-from tools.invoice_number_tools import get_invoice_numbers
+### 「幫我開一張發票，客人買了 2 杯拿鐵 65 元、1 個蛋糕 85 元」
 
-result = get_invoice_numbers()
-# 回應:
-# {
-#   "INDEX": {
-#     "REPLY": "1",
-#     "TAXMONTH": "11504",          ← 發票期別（民國 115 年 03-04 月）
-#     "INVOICEHEADER": "GS",        ← 發票字軌
-#     "INVOICESTART": "82775400",   ← 起始號碼
-#     "INVOICEEND": "82775449",     ← 結束號碼（共 50 張）
-#     "QRCodeASKey": "D016F2FF..."  ← QR Code 加密金鑰
-#   }
-# }
+**AI 先呼叫** `get_invoice_numbers_expanded()` 取得可用號碼，再呼叫：
+
 ```
-
-### 範例 3：展開取號含 AESKEY (Z21)
-
-每張發票取得獨立的 AESKEY 與隨機碼，供 QR Code 產生使用。
-
-```python
-from tools.invoice_number_tools import get_invoice_numbers_expanded
-
-result = get_invoice_numbers_expanded()
-# INVOICEDATA 陣列包含每張發票的資訊:
-# [
-#   {"INVOICE_NUMBER": "GS82775450", "AESKEY": "Xymp9aqy...", "RANDOMNUMBER": "7833"},
-#   {"INVOICE_NUMBER": "GS82775451", "AESKEY": "XausdWBO...", "RANDOMNUMBER": "4581"},
-#   ...
-# ]
-```
-
-### 範例 4：開立 B2C 發票 (C0401)
-
-```python
-from tools.b2c_invoice_tools import create_b2c_invoice
-
-result = create_b2c_invoice(
-    invoice_number="GS82775401",
-    invoice_date="2026-04-01",
-    invoice_time="22:35:00",
-    buyer_id="0000000000",       # 消費者（無統編）
-    buyer_name="0000",           # 系統自動轉換為 4 碼隨機數
-    invoice_type="07",
-    donate_mark="0",             # 非捐贈
-    print_mark="Y",              # 已列印紙本
-    random_number="5678",
-    tax_type="1",                # 應稅
-    tax_rate="0.05",
-    tax_amount="5",
-    sales_amount="95",
-    free_tax="0",
-    zero_tax="0",
-    total="100",
-    items=[
-        {"B1": "1", "B2": "美式咖啡", "B3": "2", "B5": "50", "B6": "100", "B7": "1", "B13": "1"},
-    ],
+create_b2c_invoice(
+  invoice_number = "GS82775402",     ← 從配號取得
+  invoice_date   = "2026-04-01",
+  invoice_time   = "14:30:00",
+  buyer_id       = "0000000000",     ← 消費者，無統編
+  buyer_name     = "0000",
+  invoice_type   = "07",
+  donate_mark    = "0",
+  print_mark     = "Y",
+  random_number  = "6136",           ← 從配號取得
+  tax_type = "1", tax_rate = "0.05", tax_amount = "10",
+  sales_amount = "205", free_tax = "0", zero_tax = "0", total = "215",
+  items = [
+    {B1:"1", B2:"拿鐵咖啡", B3:"2", B5:"65", B6:"130", B7:"1", B13:"1"},
+    {B1:"2", B2:"巧克力蛋糕", B3:"1", B5:"85", B6:"85", B7:"2", B13:"1"},
+  ]
 )
-# REPLY: "1", MESSAGE: "成功", ERROR_CODE: "0000"
 ```
 
-### 範例 5：作廢發票 (C0501)
+**結果:** `REPLY: "1"`，`MESSAGE: "成功"`，發票 `GS82775402` 開立完成。
 
-```python
-from tools.b2c_invoice_tools import void_b2c_invoice
+---
 
-result = void_b2c_invoice(
-    invoice_number="GS82775401",
-    invoice_date="2026-04-01",
-    buyer_id="0000000000",
-    seller_id="23997652",
-    cancel_date="2026-04-01",
-    cancel_time="22:36:00",
-    cancel_reason="測試作廢",
+### 「請幫我作廢發票 GS82775401，客戶取消訂單」
+
+**AI 呼叫:**
+```
+void_b2c_invoice(
+  invoice_number = "GS82775401",
+  invoice_date   = "2026-04-01",
+  buyer_id       = "0000000000",
+  seller_id      = "23997652",
+  cancel_date    = "2026-04-01",
+  cancel_time    = "15:00:00",
+  cancel_reason  = "客戶取消訂單",
 )
-# REPLY: "1", MESSAGE: "成功"
 ```
 
-### 範例 6：查詢註銷狀態 (Z11)
+**結果:** `REPLY: "1"`，`MESSAGE: "成功"` — 發票作廢成功。
 
-```python
-from tools.query_tools import get_cancel_status
+---
 
-result = get_cancel_status(
-    invoice_number="GS82775400",
-    invoice_date="2026-04-01",
+### 「幫我查一下 GS82775400 的註銷狀態」
+
+**AI 呼叫:** `get_cancel_status(invoice_number="GS82775400", invoice_date="2026-04-01")`
+
+**結果:** `STATUSCODE: "1"` = 已完成、`"2"` = 尚未完成、`"3"` = 失敗。AI 會用白話告訴你目前狀態。
+
+---
+
+### 「發票 GS82775400 開錯了，幫我註銷」
+
+**AI 呼叫:**
+```
+cancel_invoice(
+  invoice_number = "GS82775400",
+  invoice_date   = "2026-04-01",
+  buyer_id       = "0000000000",
+  seller_id      = "23997652",
+  cancel_date    = "2026-04-01",
+  cancel_time    = "16:00:00",
+  cancel_reason  = "誤開發票",
 )
-# STATUSCODE: "1"=已完成, "2"=尚未完成, "3"=失敗
 ```
 
-### 範例 7：完整流程 — 取號、開票、作廢
+**結果:** 若發票已上傳財政部，`REPLY: "1"` 表示註銷成功。若尚未上傳，系統回傳 `REPLY: "-1"` 說明發票仍在處理中 — AI 會告訴你稍後再試。
 
-```python
-from tools.invoice_number_tools import get_invoice_numbers_expanded
-from tools.b2c_invoice_tools import create_b2c_invoice, void_b2c_invoice
+> **備註：**「作廢」(C0501) 和「註銷」(C0701) 不同。作廢是發票尚未上傳財政部前的操作；註銷是上傳後的操作。AI 會根據情境自動選擇正確的工具。
 
-# 第一步：取得可用發票號碼（含 AESKEY）
-numbers = get_invoice_numbers_expanded()
-inv = numbers["INDEX"]["INVOICEDATA"][0]
+---
 
-# 第二步：使用配號開立發票
-result = create_b2c_invoice(
-    invoice_number=inv["INVOICE_NUMBER"],
-    invoice_date="2026-04-01",
-    invoice_time="14:30:00",
-    buyer_id="0000000000",
-    buyer_name="0000",
-    invoice_type="07",
-    donate_mark="0",
-    print_mark="Y",
-    random_number=inv["RANDOMNUMBER"],
-    tax_type="1", tax_rate="0.05", tax_amount="10",
-    sales_amount="190", free_tax="0", zero_tax="0", total="200",
-    items=[
-        {"B1": "1", "B2": "拿鐵咖啡", "B3": "2", "B5": "65", "B6": "130", "B7": "1", "B13": "1"},
-        {"B1": "2", "B2": "巧克力蛋糕", "B3": "1", "B5": "70", "B6": "70", "B7": "2", "B13": "1"},
-    ],
-)
-assert result["INDEX"]["REPLY"] == "1"
+### 「查一下這期 GS 字軌已下載的配號區間」
 
-# 第三步：如需作廢
-void_result = void_b2c_invoice(
-    invoice_number=inv["INVOICE_NUMBER"],
-    invoice_date="2026-04-01",
-    buyer_id="0000000000",
-    seller_id="23997652",
-    cancel_date="2026-04-01",
-    cancel_time="15:00:00",
-    cancel_reason="客戶取消訂單",
-)
-assert void_result["INDEX"]["REPLY"] == "1"
+**AI 呼叫:**
 ```
+get_downloaded_track_ranges(
+  head_ban      = "23997652",
+  branch_ban    = "23997652",
+  invoice_type  = "07",
+  year_month    = "11504",
+  invoice_track = "GS",
+)
+```
+
+**結果:** 回傳該期別已成功下載的字軌區間明細。
 
 ## 測試
 
