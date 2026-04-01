@@ -14,6 +14,8 @@ def create_b2c_allowance(
     buyer_name: str = Field(description="Buyer name."),
     allowance_type: str = Field(description="Allowance type ('2'=seller notice)."),
     items: list = Field(description="List of allowance items. Each item: {D1: seq, D2: original_date, D3: original_inv_number, D4: seq_number, D5: description, D6: qty, D8: unit_price, D9: amount, D10: tax, D11: tax_type}."),
+    tax_amount: str = Field(description="Tax amount (C2)."),
+    total_amount: str = Field(description="Total amount (C3)."),
     buyer_address: Annotated[Optional[str], Field(description="Buyer address (B3).")] = None,
     buyer_person_in_charge: Annotated[Optional[str], Field(description="Buyer person in charge (B4).")] = None,
     buyer_telephone: Annotated[Optional[str], Field(description="Buyer telephone (B5).")] = None,
@@ -21,8 +23,6 @@ def create_b2c_allowance(
     buyer_email: Annotated[Optional[str], Field(description="Buyer email (B7).")] = None,
     buyer_customer_number: Annotated[Optional[str], Field(description="Buyer customer number (B8).")] = None,
     buyer_role_remark: Annotated[Optional[str], Field(description="Buyer role remark (B9).")] = None,
-    tax_amount: Annotated[Optional[str], Field(description="Tax amount (C2).")] = None,
-    total_amount: Annotated[Optional[str], Field(description="Total amount (C3).")] = None,
     original_seller_id: Annotated[Optional[str], Field(description="Original seller ID (C4).")] = None,
     original_buyer_id: Annotated[Optional[str], Field(description="Original buyer ID (C5).")] = None,
 ) -> dict:
@@ -34,6 +34,8 @@ def create_b2c_allowance(
         "B1": buyer_id,
         "B2": buyer_name,
         "C1": allowance_type,
+        "C2": tax_amount,
+        "C3": total_amount,
         "D": items,
     }
     if buyer_address is not None:
@@ -50,10 +52,6 @@ def create_b2c_allowance(
         payload["B8"] = buyer_customer_number
     if buyer_role_remark is not None:
         payload["B9"] = buyer_role_remark
-    if tax_amount is not None:
-        payload["C2"] = tax_amount
-    if total_amount is not None:
-        payload["C3"] = total_amount
     if original_seller_id is not None:
         payload["C4"] = original_seller_id
     if original_buyer_id is not None:
@@ -153,15 +151,15 @@ def create_b2b_allowance(
     allowance_date: str = Field(description="Allowance date (YYYYMMDD)."),
     seller_name: str = Field(description="Seller name."),
     seller_address: str = Field(description="Seller address (mandatory)."),
-    seller_person_in_charge: str = Field(description="Seller person in charge."),
-    seller_telephone: str = Field(description="Seller telephone number."),
-    seller_facsimile: str = Field(description="Seller facsimile number."),
     buyer_identifier: str = Field(description="Buyer tax ID."),
     buyer_name: str = Field(description="Buyer name."),
     allowance_type: str = Field(description="Allowance type."),
     items: list = Field(description="List of product items. Each item: {ALLOWANCESEQUENCENUMBER, ORIGINALINVOICEDATE, ORIGINALINVOICENUMBER, ORIGINALDESCRIPTION, QUANTITY, UNITPRICE, AMOUNT, TAX, TAXTYPE, optional: UNIT, ORIGINALSEQUENCENUMBER}."),
     tax_amount: str = Field(description="Tax amount."),
     total_amount: str = Field(description="Total amount."),
+    seller_person_in_charge: Annotated[Optional[str], Field(description="Seller person in charge (S_PERSONINCHARGE).")] = None,
+    seller_telephone: Annotated[Optional[str], Field(description="Seller telephone (S_TELEPHONENUMBER).")] = None,
+    seller_facsimile: Annotated[Optional[str], Field(description="Seller facsimile (S_FACSIMILENUMBER).")] = None,
     seller_email: Annotated[Optional[str], Field(description="Seller email address.")] = None,
     seller_customer_number: Annotated[Optional[str], Field(description="Seller customer number.")] = None,
     seller_role_remark: Annotated[Optional[str], Field(description="Seller role remark.")] = None,
@@ -182,9 +180,6 @@ def create_b2b_allowance(
         "ALLOWANCEDATE": allowance_date,
         "S_NAME": seller_name,
         "S_ADDRESS": seller_address,
-        "S_PERSONINCHARGE": seller_person_in_charge,
-        "S_TELEPHONENUMBER": seller_telephone,
-        "S_FACSIMILENUMBER": seller_facsimile,
         "IDENTIFIER": buyer_identifier,
         "NAME": buyer_name,
         "ALLOWANCETYPE": allowance_type,
@@ -192,6 +187,12 @@ def create_b2b_allowance(
         "TAXAMOUNT": tax_amount,
         "TOTALAMOUNT": total_amount,
     }
+    if seller_person_in_charge is not None:
+        payload["S_PERSONINCHARGE"] = seller_person_in_charge
+    if seller_telephone is not None:
+        payload["S_TELEPHONENUMBER"] = seller_telephone
+    if seller_facsimile is not None:
+        payload["S_FACSIMILENUMBER"] = seller_facsimile
     if seller_email is not None:
         payload["S_EMAILADDRESS"] = seller_email
     if seller_customer_number is not None:

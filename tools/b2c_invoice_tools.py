@@ -1,5 +1,6 @@
 """B2C invoice tools — C0401, C0401N, C0501."""
 
+from datetime import datetime
 from typing import Annotated, Optional
 from pydantic import Field
 from app import mcp
@@ -39,7 +40,6 @@ def create_b2c_invoice(
     currency: Annotated[Optional[str], Field(description="Currency code (e.g. 'USD').")] = None,
 ) -> dict:
     """Create a B2C invoice using positional field format (C0401). Returns the API response."""
-    from datetime import datetime
     creds = get_credentials()
     payload: dict = {
         "A1": "C0401",

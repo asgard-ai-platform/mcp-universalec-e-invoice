@@ -34,6 +34,8 @@ class TestCreateB2cAllowance:
             buyer_name="Test Buyer",
             allowance_type="2",
             items=[SAMPLE_ITEM_POSITIONAL],
+            tax_amount="10",
+            total_amount="210",
         )
         called_body = json.loads(mock_post.call_args[1]["data"])
         inv = called_body["Invoice"]
@@ -42,6 +44,8 @@ class TestCreateB2cAllowance:
         assert inv["A2"] == "20240115"
         assert inv["B1"] == ""
         assert inv["C1"] == "2"
+        assert inv["C2"] == "10"
+        assert inv["C3"] == "210"
         assert inv["D"] == [SAMPLE_ITEM_POSITIONAL]
         assert "Invoice" in called_body
         assert result["Invoice"]["REPLY"] == "1"
@@ -60,6 +64,8 @@ class TestCreateB2cAllowance:
             buyer_name="Buyer",
             allowance_type="2",
             items=[SAMPLE_ITEM_POSITIONAL],
+            tax_amount="10",
+            total_amount="210",
         )
         called_body = json.loads(mock_post.call_args[1]["data"])
         assert "Invoice" in called_body

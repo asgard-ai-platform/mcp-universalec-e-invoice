@@ -45,10 +45,10 @@ def post_einvoice(
             index_data.update({
                 "ACCOUNT": "0000000000000000",
                 "APPID": "0000000000000000",
-                "ServerType": "invioce_ml",
+                "ServerType": "invioce_ml",  # sic — vendor API uses this spelling
                 "REPLY": "",
                 "MESSAGE": "",
-                "VERIONUPDATE": "",
+                "VERIONUPDATE": "",  # sic — vendor API uses this spelling
                 "EcrId": "",
                 "APPVSERION": "",
             })
@@ -62,7 +62,7 @@ def post_einvoice(
             "SYSTIME": _get_systime(),
             "ACCOUNT": "0000000000000000",
             "APPID": "0000000000000000",
-            "ServerType": "invioce_ml",
+            "ServerType": "invioce_ml",  # sic — vendor API uses this spelling
             **payload,
         }
         body = {"Invoice": inner}

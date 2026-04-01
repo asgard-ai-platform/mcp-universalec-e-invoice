@@ -1,9 +1,11 @@
 """Cancel tools — C0701, B0701."""
 
+from datetime import datetime
 from typing import Annotated, Optional
 from pydantic import Field
 from app import mcp
 from connectors.einvoice_client import post_einvoice
+from config.settings import get_credentials
 
 
 @mcp.tool()
@@ -69,12 +71,9 @@ def batch_cancel_invoice(
     original_currency_amount: Annotated[Optional[str], Field(description="Original currency amount (C9).")] = None,
     exchange_rate: Annotated[Optional[str], Field(description="Exchange rate (C10).")] = None,
     currency: Annotated[Optional[str], Field(description="Currency code (C11).")] = None,
-    d1: Annotated[Optional[str], Field(description="D1 field.")] = None,
-    d2: Annotated[Optional[str], Field(description="D2 field.")] = None,
-    d3: Annotated[Optional[str], Field(description="D3 field.")] = None,
-    d4: Annotated[Optional[str], Field(description="D4 field.")] = None,
 ) -> dict:
     """Batch cancel an invoice by re-submitting full invoice data with cancellation info (B0701). Returns the API response."""
+    creds = get_credentials()
     payload: dict = {
         "INVOICE_CODE": "B0701",
         "CANCEL_DATE": cancel_date,
@@ -85,10 +84,16 @@ def batch_cancel_invoice(
         "A4": invoice_time,
         "A5": buyer_id,
         "A6": buyer_name,
+        "A7": "", "A8": "", "A9": "", "A10": "", "A11": "", "A12": "", "A13": "",
+        "A15": "", "A16": "", "A17": "", "A18": "", "A19": "", "A20": "", "A21": "",
         "A22": invoice_type,
+        "A23": "",
         "A24": donate_mark,
+        "A25": "", "A26": "", "A27": "",
         "A28": print_mark,
+        "A29": "",
         "A30": random_number,
+        "A31": "",
         "B": items,
         "C1": sales_amount,
         "C2": free_tax,
@@ -97,6 +102,14 @@ def batch_cancel_invoice(
         "C5": tax_rate,
         "C6": tax_amount,
         "C7": total,
+        "C8": "", "C9": "", "C10": "0.00", "C11": "", "C12": "", "C13": "",
+        "D1": creds["SELLERID"],
+        "D2": creds["POSSN"],
+        "D3": creds["POSID"],
+        "D4": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "EcrId": "",
+        "SellerName": "",
+        "QRCodeASKey": "",
     }
     if carrier_type is not None:
         payload["A25"] = carrier_type
@@ -120,12 +133,4 @@ def batch_cancel_invoice(
         payload["C10"] = exchange_rate
     if currency is not None:
         payload["C11"] = currency
-    if d1 is not None:
-        payload["D1"] = d1
-    if d2 is not None:
-        payload["D2"] = d2
-    if d3 is not None:
-        payload["D3"] = d3
-    if d4 is not None:
-        payload["D4"] = d4
     return post_einvoice("B0701", payload, wrapper="Invoice")

@@ -1,6 +1,3 @@
-import json
-
-
 def test_get_system_time(mocker, mock_env):
     mock_resp = mocker.Mock()
     mock_resp.status_code = 200
