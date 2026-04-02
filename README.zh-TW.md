@@ -1,8 +1,14 @@
 # MCP 汎宇電商電子發票伺服器
 
-[MCP (Model Context Protocol)](https://modelcontextprotocol.io/) 伺服器，封裝 **汎宇電商 (Universal EC) 台灣電子發票 POS 機 Web Service** (JSON 格式, MIG4.1)。透過 stdio JSON-RPC 2.0 提供 27 個 AI 可呼叫的工具，涵蓋所有可用的功能代碼。
+[![PyPI version](https://img.shields.io/pypi/v/mcp-universalec-e-invoice)](https://pypi.org/project/mcp-universalec-e-invoice/)
+[![Python versions](https://img.shields.io/pypi/pyversions/mcp-universalec-e-invoice)](https://pypi.org/project/mcp-universalec-e-invoice/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 [English](README.md)
+
+開源 [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) 伺服器，封裝 **汎宇電商 (Universal EC) 台灣電子發票 POS 機 Web Service** (JSON 格式, MIG4.1)。透過 stdio JSON-RPC 2.0 提供 27 個 AI 可呼叫的工具，涵蓋所有可用的功能代碼。
+
+專為 [Claude Code](https://claude.ai/code) 及所有 MCP 相容的 AI 客戶端打造。讓 AI 代理人透過自然語言開立發票、作廢發票、管理發票號碼、查詢註銷狀態、處理折讓。
 
 ## 功能特色
 

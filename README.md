@@ -1,10 +1,14 @@
 # MCP Universal EC E-Invoice Server
 
-An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server wrapping the **Universal EC (汎宇電商) Taiwan E-Invoice POS Web Service** (JSON format, MIG4.1). Exposes 27 AI-callable tools covering all available function codes via stdio JSON-RPC 2.0.
-
-Part of the [Asgard AI Platform](https://github.com/asgard-ai-platform) open-source ecosystem.
+[![PyPI version](https://img.shields.io/pypi/v/mcp-universalec-e-invoice)](https://pypi.org/project/mcp-universalec-e-invoice/)
+[![Python versions](https://img.shields.io/pypi/pyversions/mcp-universalec-e-invoice)](https://pypi.org/project/mcp-universalec-e-invoice/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 [繁體中文](README.zh-TW.md)
+
+An open-source [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server wrapping the **Universal EC (汎宇電商) Taiwan E-Invoice POS Web Service** (JSON format, MIG4.1). Exposes 27 AI-callable tools covering all available function codes via stdio JSON-RPC 2.0.
+
+Built for [Claude Code](https://claude.ai/code) and any MCP-compatible AI client. Enables AI agents to issue invoices, void invoices, manage invoice numbers, query cancellation status, and handle allowances through natural language.
 
 ## Features
 
