@@ -1,29 +1,43 @@
-[build-system]
-requires = ["setuptools>=68.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "mcp-universalec-e-invoice"
 version = "0.1.0"
-description = "MCP Server for Universal EC E-Invoice — Taiwan e-invoice POS Web Service"
+description = "MCP server wrapping the Universal EC (汎宇電商) Taiwan e-invoice POS Web Service into 27 AI Agent-callable tools"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    {name = "Asgard AI Platform", email = "dev@asgard.ai"},
+    { name = "Asgard AI Platform" },
+]
+keywords = ["mcp", "e-invoice", "taiwan", "einvoice", "universalec", "ai-agent", "claude"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "requests",
+    "mcp",
+    "python-dotenv",
 ]
 
-dependencies = [
-    "requests>=2.31.0",
-    "mcp>=1.0.0",
-    "python-dotenv>=1.0.0",
-]
+[project.urls]
+Homepage = "https://github.com/asgard-ai-platform/mcp-universalec-e-invoice"
+Repository = "https://github.com/asgard-ai-platform/mcp-universalec-e-invoice"
+Issues = "https://github.com/asgard-ai-platform/mcp-universalec-e-invoice/issues"
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
     "pytest-mock>=3.10.0",
 ]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
 
 [project.scripts]
 mcp-universalec-e-invoice = "mcp_server:main"
