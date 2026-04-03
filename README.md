@@ -3,6 +3,9 @@
 [![PyPI version](https://img.shields.io/pypi/v/mcp-universalec-e-invoice)](https://pypi.org/project/mcp-universalec-e-invoice/)
 [![Python versions](https://img.shields.io/pypi/pyversions/mcp-universalec-e-invoice)](https://pypi.org/project/mcp-universalec-e-invoice/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/asgard-ai-platform/mcp-universalec-e-invoice)](https://github.com/asgard-ai-platform/mcp-universalec-e-invoice/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/asgard-ai-platform/mcp-universalec-e-invoice)](https://github.com/asgard-ai-platform/mcp-universalec-e-invoice/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/asgard-ai-platform/mcp-universalec-e-invoice)](https://github.com/asgard-ai-platform/mcp-universalec-e-invoice/commits/main)
 
 [繁體中文](README.zh-TW.md)
 
